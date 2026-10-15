@@ -1,8 +1,9 @@
 /**
  * Remote-access trust regression tests: the /sidebar fence must accept a
- * reverse-proxy domain or LAN IP listed in the DSH web runtime's
- * `webRuntime.trustedHosts` — the same trust list the /api gateway accepts
- * (LAN IP literals sampled at bind plus `--trusted-host` authorities).
+ * reverse-proxy domain or LAN IP listed in the DSH host's
+ * `webStartup.trustedHosts` — the same trust list the /api gateway accepts
+ * (`--trusted-host` authorities; the listener's bind IP is accepted
+ * independently of the list).
  *
  * Regression: the fence used to read the connection row's trustedHosts
  * through the Loader (`entry.options.name === 'connection'`, which never
@@ -88,7 +89,7 @@ function req(
   } as unknown as IncomingMessage
 }
 
-/** Mount apply() against a fake context with a replaceable webRuntime trust list. */
+/** Mount apply() against a fake context with a replaceable webStartup trust list. */
 function mount(initialTrustedHosts: readonly string[] = []): {
   api: (r: IncomingMessage, s: ServerResponse) => Promise<void>
   upgrade: (path: string) => SidebarWebUpgradeRoute['handler']
@@ -101,7 +102,7 @@ function mount(initialTrustedHosts: readonly string[] = []): {
   const upgrades: SidebarWebUpgradeRoute[] = []
   const effects: Array<() => void | (() => void)> = []
   const ctx = {
-    webRuntime: runtime,
+    webStartup: runtime,
     webServer: {
       register: (route: SidebarWebRoute) => { routes.push(route); return () => {} },
       registerUpgrade: (route: SidebarWebUpgradeRoute) => { upgrades.push(route); return () => {} },
@@ -153,8 +154,8 @@ function lanRequest(): IncomingMessage {
   }, '{"sessionId":"test-session"}')
 }
 
-describe('remote-access trust (webRuntime.trustedHosts)', () => {
-  it('accepts a reverse-proxy domain configured in webRuntime.trustedHosts', async () => {
+describe('remote-access trust (webStartup.trustedHosts)', () => {
+  it('accepts a reverse-proxy domain configured in webStartup.trustedHosts', async () => {
     const { api, cleanup } = mount(['example.com'])
     try {
       const res = fakeRes()
@@ -165,7 +166,7 @@ describe('remote-access trust (webRuntime.trustedHosts)', () => {
     }
   })
 
-  it('accepts LAN IP literals from webRuntime.trustedHosts', async () => {
+  it('accepts LAN IP literals from webStartup.trustedHosts', async () => {
     const { api, cleanup } = mount(['192.0.2.1'])
     try {
       const res = fakeRes()
@@ -176,7 +177,7 @@ describe('remote-access trust (webRuntime.trustedHosts)', () => {
     }
   })
 
-  it('stays loopback-only when webRuntime.trustedHosts is empty', async () => {
+  it('stays loopback-only when webStartup.trustedHosts is empty', async () => {
     const { api, cleanup } = mount([])
     try {
       const remote = fakeRes()
@@ -330,7 +331,7 @@ describe('remote-access trust (webRuntime.trustedHosts)', () => {
   })
 
 
-  it('reads webRuntime.trustedHosts per request, not once at apply', async () => {
+  it('reads webStartup.trustedHosts per request, not once at apply', async () => {
     const { api, setTrustedHosts, cleanup } = mount([])
     try {
       const before = fakeRes()

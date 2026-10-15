@@ -25,7 +25,7 @@ import { PAGE_BYTES } from '../src/editor-limits.ts'
 import type { SidebarWebRoute } from '../src/context-types.ts'
 
 interface FakeContext {
-  webRuntime: { trustedHosts: readonly string[] }
+  webStartup: { trustedHosts: readonly string[] }
   webServer: {
     register: (route: SidebarWebRoute) => () => void
     registerUpgrade: () => () => void
@@ -55,7 +55,7 @@ function workspaceWith(name: string, contents: Buffer | string): string {
 function mountApi(workspace: string): SidebarWebRoute {
   const routes: SidebarWebRoute[] = []
   const ctx: FakeContext = {
-    webRuntime: { trustedHosts: [] },
+    webStartup: { trustedHosts: [] },
     webServer: { register: (route) => { routes.push(route); return () => {} }, registerUpgrade: () => () => {} },
     sessions: { get: () => ({ header: { cwd: workspace } }) },
     tools: { register: () => () => {} },
